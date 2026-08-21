@@ -83,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'suppr
 $filtre = $_GET['filtre'] ?? 'tous';
 $where  = '';
 if ($filtre === 'rupture')    $where = 'WHERE p.stock = 0';
-if ($filtre === 'faible')     $where = 'WHERE p.stock > 0 AND p.stock <= 3';
-if ($filtre === 'disponible') $where = 'WHERE p.stock > 3';
+if ($filtre === 'faible')     $where = 'WHERE p.stock > 0 AND p.stock <= 10';
+if ($filtre === 'disponible') $where = 'WHERE p.stock > 10';
 
 // ── Chargement des catégories et produits ─────────────────────
 $categories = $pdo->query("SELECT id, nom FROM categories ORDER BY id")->fetchAll();
