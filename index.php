@@ -19,13 +19,22 @@ require_once 'includes/header.php';
 $tendances = [];
 try {
     require_once 'includes/db.php';
-    // Sélection aléatoire de 5 produits avec dédoublonnage par titre
+    // Sélection aléatoire de 5 produits avec dédoublonnage par titre.
+    // On prend UNE ligne cohérente par manga (le tome le plus bas) au lieu
+    // de piocher MIN(prix)/MIN(image)/MIN(id) indépendamment, ce qui pouvait
+    // afficher des infos venant de tomes différents.
     $stmt = $pdo->query("
-        SELECT MIN(p.id) AS id, p.titre, MIN(p.tome) AS tome,
-               MIN(p.prix) AS prix, MIN(p.image) AS image, c.slug AS categorie
+        SELECT p.id, p.titre, p.tome, p.prix, p.image, c.slug AS categorie
         FROM produits p
         JOIN categories c ON c.id = p.categorie_id
-        GROUP BY p.titre, c.slug
+        JOIN (
+            SELECT titre, categorie_id, MIN(tome) AS tome_min
+            FROM produits
+            GROUP BY titre, categorie_id
+        ) repr ON repr.titre = p.titre
+              AND repr.categorie_id = p.categorie_id
+              AND repr.tome_min = p.tome
+        GROUP BY p.id
         ORDER BY RAND()
         LIMIT 5
     ");
