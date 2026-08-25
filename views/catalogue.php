@@ -39,27 +39,16 @@ try {
         }
     }
 
-    // On affiche une carte par manga (titre), représentée par le tome le plus bas.
-    // Contrairement à MIN(id)/MIN(tome)/MIN(prix)/MIN(image)/MIN(stock) séparément
-    // (qui pouvaient piocher ces valeurs sur des tomes différents et donc afficher
-    // des infos incohérentes), on sélectionne ici UNE seule ligne réelle par manga :
-    // celle du tome minimum. Tous les champs (prix, image, stock...) proviennent
-    // donc bien du même produit, et un nouveau tome ajouté est pris en compte.
+    // Chaque produit (chaque tome) est affiché comme sa propre carte dans le
+    // catalogue : pas de fusion par titre. Deux tomes d'un même manga (ex:
+    // Dragon Ball Tome 1 et Tome 35) apparaissent donc bien tous les deux.
     $sql = "
         SELECT p.id, p.titre, p.tome, p.prix, p.image, p.stock,
                c.slug AS categorie, c.nom AS categorie_nom
         FROM produits p
         JOIN categories c ON c.id = p.categorie_id
-        JOIN (
-            SELECT titre, categorie_id, MIN(tome) AS tome_min
-            FROM produits
-            GROUP BY titre, categorie_id
-        ) repr ON repr.titre = p.titre
-              AND repr.categorie_id = p.categorie_id
-              AND repr.tome_min = p.tome
         WHERE " . implode(' AND ', $where) . "
-        GROUP BY p.id
-        ORDER BY p.titre
+        ORDER BY p.titre, p.tome
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);

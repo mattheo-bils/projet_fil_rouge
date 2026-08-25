@@ -31,25 +31,16 @@ try {
         exit;
     }
 
-    // Une ligne cohérente par manga suggéré (tome le plus bas), plutôt que
-    // MIN(prix)/MIN(image)/MIN(id) séparés qui pouvaient venir de tomes différents.
+    // Chaque tome est un produit à part entière : les suggestions listent
+    // des produits individuels de la même catégorie, sans fusion par titre.
     $stmt2 = $pdo->prepare("
         SELECT p.id, p.titre, p.tome, p.prix, p.image
         FROM produits p
-        JOIN (
-            SELECT titre, categorie_id, MIN(tome) AS tome_min
-            FROM produits
-            WHERE categorie_id = ?
-            GROUP BY titre, categorie_id
-        ) repr ON repr.titre = p.titre
-              AND repr.categorie_id = p.categorie_id
-              AND repr.tome_min = p.tome
         WHERE p.categorie_id = ? AND p.id != ?
-        GROUP BY p.id
         ORDER BY RAND()
         LIMIT 4
     ");
-    $stmt2->execute([$produit['categorie_id'], $produit['categorie_id'], $id]);
+    $stmt2->execute([$produit['categorie_id'], $id]);
     $suggestions = $stmt2->fetchAll();
 
 } catch (Exception $e) {

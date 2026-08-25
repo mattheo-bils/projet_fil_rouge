@@ -39,6 +39,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'ajout
     if (empty($image))       $errors[] = "Le chemin de l'image est requis.";
 
     if (empty($errors)) {
+        // Si un manga du même titre existe déjà (recherche insensible à la casse
+        // grâce à la collation de la colonne), on réutilise son orthographe exacte
+        // de titre/auteur et sa catégorie, pour que tous les tomes d'un même manga
+        // restent parfaitement cohérents entre eux (évite "Dragon Ball" vs "dragon ball",
+        // ou un tome classé par erreur dans une autre catégorie).
+        $ref = $pdo->prepare("
+            SELECT titre, auteur, categorie_id
+            FROM produits
+            WHERE titre = ?
+            LIMIT 1
+        ");
+        $ref->execute([$titre]);
+        $existant = $ref->fetch();
+
+        if ($existant) {
+            $titre       = $existant['titre'];
+            $auteur      = $existant['auteur'];
+            $categorieId = (int)$existant['categorie_id'];
+        }
+
         $pdo->prepare("
             INSERT INTO produits (titre, auteur, tome, prix, stock, categorie_id, image, description)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
